@@ -20,8 +20,12 @@ class UnivariateGaussian:
         Parameters
         ----------
         biased_var : bool, default=False
+<<<<<<< HEAD
             Should fitted estimator of variance be a biased or unbiased
             estimator
+=======
+            Should fitted estimator of variance be a biased or unbiased estimator
+>>>>>>> 29d71984c577d1ec78e9231f7c8c54a984933a33
 
         Attributes
         ----------
@@ -143,12 +147,12 @@ class MultivariateGaussian:
             Initialized as false indicating current estimator instance has not been fitted.
             To be set as True in `MultivariateGaussian.fit` function.
 
-        mu_: float
-            Estimated expectation initialized as None. To be set in `MultivariateGaussian.ft`
+        mu_: ndarray of shape (n_features,)
+            Estimated expectation initialized as None. To be set in `MultivariateGaussian.fit`
             function.
 
-        cov_: float
-            Estimated covariance initialized as None. To be set in `MultivariateGaussian.ft`
+        cov_: ndarray of shape (n_features, n_features)
+            Estimated covariance initialized as None. To be set in `MultivariateGaussian.fit`
             function.
         """
         self.mu_, self.cov_ = None, None
@@ -167,12 +171,12 @@ class MultivariateGaussian:
 
         Parameters
         ----------
-        X: ndarray of shape (n_samples, )
+        X: ndarray of shape (n_samples, n_features)
             Training data
 
         Returns
         -------
-        self : returns an instance of self.
+        self : returns an instance of self
 
         Notes
         -----
@@ -205,7 +209,7 @@ class MultivariateGaussian:
 
         Parameters
         ----------
-        X: ndarray of shape (n_samples, )
+        X: ndarray of shape (n_samples, n_features)
             Samples to calculate PDF for
 
         Returns
@@ -235,17 +239,17 @@ class MultivariateGaussian:
 
         Parameters
         ----------
-        mu : float
+        mu : ndarray of shape (n_features,)
             Expectation of Gaussian
-        cov : float
+        cov : ndarray of shape (n_features, n_features)
             covariance matrix of Gaussian
-        X : ndarray of shape (n_samples, )
+        X : ndarray of shape (n_samples, n_features)
             Samples to calculate log-likelihood with
 
         Returns
         -------
         log_likelihood: float
-            log-likelihood calculated
+            log-likelihood calculated over all input data and under given parameters of Gaussian
         """
         det_cov = np.linalg.det(cov)
         inv_cuv = np.linalg.inv(cov)
