@@ -1,4 +1,5 @@
-from IMLearn.learners.classifiers import Perceptron, LDA, GaussianNaiveBayes
+from IMLearn.learners.classifiers import Perceptron, LDA, GaussianNaiveBayes, \
+    linear_discriminant_analysis, gaussian_naive_bayes
 from typing import Tuple
 from utils import *
 import plotly.graph_objects as go
@@ -6,7 +7,6 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 from math import atan2, pi
 
-from utils import custom
 
 pio.templates.default = "simple_white"
 
@@ -30,7 +30,8 @@ def load_dataset(filename: str) -> Tuple[np.ndarray, np.ndarray]:
         Class vector specifying for each sample its class
 
     """
-    raise NotImplementedError()
+    data = np.load(filename)
+    return data[:, :2], data[:, 2].astype(int)
 
 
 def run_perceptron():
@@ -47,12 +48,9 @@ def run_perceptron():
     for n, f in [("Linearly Separable", "linearly_separable.npy"),
                  ("Linearly Inseparable", "linearly_inseparable.npy")]:
         # Load dataset
-        data = np.load(r"../datasets/" + f)
-
+        X, y_true = load_dataset(r"../datasets/" + f)
         # Fit Perceptron and record loss in each fit iteration
         losses = []
-        X = data[:, :2]
-        y_true = data[:, 2]
         per = Perceptron(callback=callback_func)
         per.fit(X, y_true)
 
@@ -85,12 +83,14 @@ def get_ellipse(mu: np.ndarray, cov: np.ndarray):
         scatter: A plotly trace object of the ellipse
     """
     l1, l2 = tuple(np.linalg.eigvalsh(cov)[::-1])
-    theta = atan2(l1 - cov[0, 0], cov[0, 1]) if cov[0, 1] != 0 else (np.pi / 2 if cov[0, 0] < cov[1, 1] else 0)
+    theta = atan2(l1 - cov[0, 0], cov[0, 1]) if cov[0, 1] != 0 else (
+        np.pi / 2 if cov[0, 0] < cov[1, 1] else 0)
     t = np.linspace(0, 2 * pi, 100)
     xs = (l1 * np.cos(theta) * np.cos(t)) - (l2 * np.sin(theta) * np.sin(t))
     ys = (l1 * np.sin(theta) * np.cos(t)) + (l2 * np.cos(theta) * np.sin(t))
 
-    return go.Scatter(x=mu[0] + xs, y=mu[1] + ys, mode="lines", marker_color="black")
+    return go.Scatter(x=mu[0] + xs, y=mu[1] + ys, mode="lines",
+                      marker_color="black")
 
 
 def compare_gaussian_classifiers():
@@ -100,16 +100,12 @@ def compare_gaussian_classifiers():
     """
     lda = LDA()
     qda = GaussianNaiveBayes()
-    subplots_titles = ["LDA model", "Gaussian Naive Bayes model"]
     models = np.array(["lda", "qda"])
     symbols = np.array(["circle", "x"])
     for f in ["gaussian1.npy", "gaussian2.npy"]:
         # Load dataset
-        data = np.load(r"../datasets/" + f)
-
+        X, y_true = load_dataset(r"../datasets/" + f)
         # Fit models and predict over training set
-        X = data[:, :2]
-        y_true = data[:, 2]
         lda.fit(X, y_true)
         y_pred_lda = lda._predict(X)
         qda.fit(X, y_true)
@@ -121,13 +117,15 @@ def compare_gaussian_classifiers():
         # Create subplots
         from IMLearn.metrics import accuracy
 
-        err_lda = [1 if y_true[i] == y_pred_lda[i] else 0 for i in range(len(y_true))]
-        err_na = [1 if y_true[i] == y_pred_qda[i] else 0 for i in range(len(y_true))]
+        err_lda = [1 if y_true[i] == y_pred_lda[i] else 0 for i in
+                   range(len(y_true))]
+        err_na = [1 if y_true[i] == y_pred_qda[i] else 0 for i in
+                  range(len(y_true))]
 
         loss_vecs = np.array([err_lda, err_na])
 
         fig = make_subplots(rows=1, cols=2, subplot_titles=[
-            rf"{{Model: {models[i]} Accuracy: {accuracy(y_true, y_pred[i])}}}$"
+            rf"{{Model: {models[i]} , Accuracy: {accuracy(y_true, y_pred[i])}"
             for i in range(len(y_pred))],
                             horizontal_spacing=0.01, vertical_spacing=.03)
         for i, m in enumerate(y_pred):
@@ -139,18 +137,19 @@ def compare_gaussian_classifiers():
                                        line=dict(color="black", width=1)))],
                 rows=(i // 3) + 1, cols=(i % 3) + 1)
 
-            fig.update_layout(title=rf"$\textbf{{{f} Dataset}}$",
-                              margin=dict(t=100)) \
+            fig.update_layout(
+                title=rf"$\textbf{{{f} Dataset, compare between LDA and QDA}}$",
+                margin=dict(t=100)) \
                 .update_xaxes(visible=False).update_yaxes(visible=False)
 
-            # for c in range(len(lda_fit.classes_)):
-            #     fig.add_traces(get_ellipse(lda_fit.mu_[c], lda_fit.cov_),
-            #                    rows=1, cols=1)
-            #
-            # for m in range(len(na_fit.classes_)):
-            #     fig.add_traces(
-            #         get_ellipse(na_fit.mu_[m], np.diag(na_fit.vars_[m])),
-            #         rows=1, cols=2)
+            for c in range(len(lda.classes_)):
+                fig.add_traces(get_ellipse(lda.mu_[c], lda.cov_),
+                               rows=1, cols=1)
+
+            for m in range(len(qda.classes_)):
+                fig.add_traces(
+                    get_ellipse(qda.mu_[m], np.diag(qda.vars_[m])),
+                    rows=1, cols=2)
         fig.show()
 
 
@@ -158,3 +157,4 @@ if __name__ == '__main__':
     np.random.seed(0)
     run_perceptron()
     compare_gaussian_classifiers()
+

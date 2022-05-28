@@ -42,6 +42,7 @@ class GaussianNaiveBayes(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
+        n_features = 1 if X.size == X.shape[0] else X.shape[1]
         classes, times = np.unique(y, return_counts=True)
         self.classes_ = classes
         self.pi_ = times/len(y)
@@ -50,7 +51,7 @@ class GaussianNaiveBayes(BaseEstimator):
         for i, cls in enumerate(self.classes_):
             X_class = X[y == cls]
             mu_arr[i] = np.mean(X_class, axis=0)
-            var_mat[i] = np.var(X_class, axis=0)
+            var_mat[i] = np.var(X_class, axis=0, ddof=1)
         self.mu_ = mu_arr
         self.vars_ = var_mat
 
